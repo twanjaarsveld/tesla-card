@@ -9,7 +9,13 @@ class TeslaCarCard extends LitElement {
     return {
       hass: {},
       config: {},
+      _showSettings: { type: Boolean }
     };
+  }
+
+  constructor() {
+    super();
+    this._showSettings = false;
   }
 
   render() {
@@ -26,9 +32,9 @@ class TeslaCarCard extends LitElement {
     const hvac = state(`climate.${p}_climate`);
     const isClimateOn = hvac?.state !== 'off' && hvac?.state !== 'unavailable';
     
-    // Charging Logic
     const isCharging = state(`sensor.${p}_charging`)?.state === 'charging';
-    const chargeLimit = state(`number.${p}_charge_limit`)?.state || '--';
+    const chargeLimit = state(`number.${p}_charge_limit`)?.state || 80;
+    const chargeAmps = state(`number.${p}_charge_current`)?.state || 16;
 
     let carImage = `/local/community/tesla-car-card/images/tesla_off.png`;
     if (isClimateOn) {
@@ -52,7 +58,7 @@ class TeslaCarCard extends LitElement {
           <div class="stats-row">
              <div class="stat-item">
                 <span class="label">ODOMETER</span>
-                <span class="value">${Math.round(state(`sensor.tesla_odometer`)?.state || 0)} km</span>
+                <span class="value">${Math.round(state(`sensor.${p}_odometer`)?.state || 0)} km</span>
              </div>
              <div class="stat-item">
                 <span class="label">INSIDE</span>
@@ -60,71 +66,85 @@ class TeslaCarCard extends LitElement {
              </div>
           </div>
 
-          <div class="actions">
-            <button class="btn ${isClimateOn ? (inTemp < 19 ? 'heat-active' : 'cool-active') : ''}" 
-                    @click="${() => this._toggleClimate(p, isClimateOn)}">
-              <ha-icon icon="mdi:fan"></ha-icon> 
-              <span>${isClimateOn ? (inTemp < 19 ? 'Heat' : 'Cool') : 'AC'}</span>
-            </button>
-
-            <button class="btn ${isCharging ? 'charging-flow' : ''}" 
-                    @mousedown="${this._handleStart}" 
-                    @touchstart="${this._handleStart}"
-                    @mouseup="${() => this._handleEnd(p, isCharging)}"
-                    @touchend="${() => this._handleEnd(p, isCharging)}">
-              <ha-icon icon="${isCharging ? 'mdi:battery-charging-60' : 'mdi:ev-station'}"></ha-icon> 
-              <span>${isCharging ? 'Charging' : 'Charge'}</span>
-            </button>
-            
-            <button class="btn ${isUnlocked ? 'unlocked-warn' : ''}" 
-                    @click="${() => this._toggleLock(p, isUnlocked)}">
-              <ha-icon icon="${isUnlocked ? 'mdi:lock-open' : 'mdi:lock'}"></ha-icon> 
-              <span>${isUnlocked ? 'Open' : 'Locked'}</span>
-            </button>
-          </div>
+          ${this._showSettings ? this.renderSettings(p, chargeLimit, chargeAmps) : this.renderActions(p, isCharging, isUnlocked, isClimateOn, inTemp)}
+          
         </div>
       </ha-card>
     `;
   }
 
-  // Long Press Logic
+  renderActions(p, isCharging, isUnlocked, isClimateOn, inTemp) {
+    return html`
+      <div class="actions">
+        <button class="btn ${isClimateOn ? (inTemp < 19 ? 'heat-active' : 'cool-active') : ''}" 
+                @click="${() => this._toggleClimate(p, isClimateOn)}">
+          <ha-icon icon="mdi:fan"></ha-icon> 
+          <span>${isClimateOn ? (inTemp < 19 ? 'Heat' : 'Cool') : 'AC'}</span>
+        </button>
+
+        <button class="btn ${isCharging ? 'charging-flow' : ''}" 
+                @mousedown="${this._handleStart}" 
+                @touchstart="${this._handleStart}"
+                @mouseup="${() => this._handleEnd(p, isCharging)}"
+                @touchend="${() => this._handleEnd(p, isCharging)}">
+          <ha-icon icon="${isCharging ? 'mdi:battery-charging-60' : 'mdi:ev-station'}"></ha-icon> 
+          <span>${isCharging ? 'Stop' : 'Charge'}</span>
+        </button>
+        
+        <button class="btn ${isUnlocked ? 'unlocked-warn' : ''}" 
+                @click="${() => this._toggleLock(p, isUnlocked)}">
+          <ha-icon icon="${isUnlocked ? 'mdi:lock-open' : 'mdi:lock'}"></ha-icon> 
+          <span>${isUnlocked ? 'Open' : 'Locked'}</span>
+        </button>
+      </div>
+    `;
+  }
+
+  renderSettings(p, limit, amps) {
+    return html`
+      <div class="settings-panel">
+        <div class="settings-header">
+           <span>Charging Controls</span>
+           <ha-icon icon="mdi:close" @click="${() => this._showSettings = false}" style="cursor:pointer"></ha-icon>
+        </div>
+        <div class="setting-row">
+          <div class="row-label">Limit: ${limit}%</div>
+          <input type="range" min="50" max="100" .value="${limit}" 
+            @change="${(e) => this._act('number', 'set_value', {entity_id: `number.${p}_charge_limit`, value: e.target.value})}">
+        </div>
+        <div class="setting-row">
+          <div class="row-label">Amps: ${amps}A</div>
+          <input type="range" min="0" max="32" .value="${amps}" 
+            @change="${(e) => this._act('number', 'set_value', {entity_id: `number.${p}_charge_current`, value: e.target.value})}">
+        </div>
+      </div>
+    `;
+  }
+
   _handleStart() {
+    this._isLongPress = false;
     this._pressTimer = window.setTimeout(() => {
       this._isLongPress = true;
-      const event = new CustomEvent("hass-more-info", {
-        detail: { entityId: `number.${this.config.prefix}_charge_limit` },
-        bubbles: true, composed: true
-      });
-      this.dispatchEvent(event);
+      this._showSettings = true;
     }, 600);
   }
 
   _handleEnd(prefix, isCharging) {
     clearTimeout(this._pressTimer);
     if (!this._isLongPress) {
-      this._toggleCharge(prefix, isCharging);
+      this._act('switch', isCharging ? 'turn_off' : 'turn_on', { entity_id: `switch.${prefix}_charge` });
     }
-    this._isLongPress = false;
-  }
-
-  _toggleCharge(prefix, isCharging) {
-    this.hass.callService('switch', isCharging ? 'turn_off' : 'turn_on', {
-      entity_id: `switch.${prefix}_charge`
-    });
   }
 
   _toggleClimate(prefix, isOn) {
-    this.hass.callService('climate', 'set_hvac_mode', {
-      entity_id: `climate.${prefix}_climate`,
-      hvac_mode: isOn ? 'off' : 'heat_cool'
-    });
+    this._act('climate', 'set_hvac_mode', { entity_id: `climate.${prefix}_climate`, hvac_mode: isOn ? 'off' : 'heat_cool' });
   }
 
   _toggleLock(prefix, isCurrentlyUnlocked) {
-    this.hass.callService('lock', isCurrentlyUnlocked ? 'lock' : 'unlock', {
-      entity_id: `lock.${prefix}_lock`
-    });
+    this._act('lock', isCurrentlyUnlocked ? 'lock' : 'unlock', { entity_id: `lock.${prefix}_lock` });
   }
+
+  _act(domain, service, data) { this.hass.callService(domain, service, data); }
 
   setConfig(config) { this.config = config; }
 
@@ -136,27 +156,28 @@ class TeslaCarCard extends LitElement {
       .car-wrapper { width: 100%; display: flex; justify-content: center; margin: 15px 0; }
       .car-img { width: 95%; max-width: 450px; }
       .stats-row { width: 100%; display: flex; justify-content: space-around; margin: 15px 0; border-top: 1px solid #333; padding-top: 15px; }
-      .stat-item { text-align: center; }
       .label { display: block; font-size: 0.65rem; color: #666; font-weight: bold; text-transform: uppercase; }
       .value { font-size: 1.1rem; font-weight: bold; }
       .actions { width: 100%; display: flex; gap: 8px; }
       .btn { flex: 1; padding: 12px 5px; border-radius: 10px; border: none; background: #333; color: white; font-weight: bold; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; cursor: pointer; transition: 0.3s; font-size: 0.8rem; overflow: hidden; position: relative; }
       
-      /* Charging Animation */
-      .charging-flow {
-        background: linear-gradient(270deg, #1db954, #1ed760, #1db954);
-        background-size: 400% 400%;
-        animation: flow 2s ease infinite;
+      .charging-flow { background: #1db954 !important; }
+      .charging-flow::after {
+        content: ""; position: absolute; top: 0; left: -100%; width: 200%; height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        animation: flow 1.5s infinite linear;
       }
-      @keyframes flow {
-        0% { background-position: 0% 50% }
-        50% { background-position: 100% 50% }
-        100% { background-position: 0% 50% }
-      }
+      @keyframes flow { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
 
       .heat-active { background: #e67e22 !important; }
       .cool-active { background: #3498db !important; }
       .unlocked-warn { background: #cc0000 !important; }
+
+      .settings-panel { background: #222; padding: 15px; border-radius: 10px; text-align: left; width: 100%; box-sizing: border-box; }
+      .settings-header { display: flex; justify-content: space-between; margin-bottom: 15px; font-weight: bold; border-bottom: 1px solid #444; padding-bottom: 5px; }
+      .setting-row { margin-bottom: 15px; }
+      .row-label { font-size: 0.9rem; color: #ccc; }
+      input[type=range] { width: 100%; margin-top: 10px; accent-color: #1db954; cursor: pointer; }
     `;
   }
 }
@@ -167,5 +188,5 @@ window.customCards = window.customCards || [];
 window.customCards.push({
   type: "tesla-car-card",
   name: "Tesla Car Card",
-  description: "Tesla Card v012 - Animated Flow & Long Press",
+  description: "v020 - Integrated Sliders & Privacy Prefix",
 });
