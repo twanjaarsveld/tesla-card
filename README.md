@@ -2,6 +2,9 @@
 
 A sleek, custom card designed for the Tesla Fleet API. This card provides a professional interface to monitor and control your Tesla directly from your dashboard.
 
+<img width="862" height="963" alt="Screenshot 2026-02-23 195118" src="https://github.com/user-attachments/assets/cb5f79d3-4f6a-4401-9d63-1ab9944ad6df" />
+
+
 ## Features
 * Vehicle Controls: Toggle car conditioning (AC), lock or unlock the doors, and start or stop charging.
 * Live Status: Real-time display of battery percentage, remaining range, and odometer.
