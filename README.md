@@ -2,7 +2,7 @@
 
 A sleek, custom card designed for the Tesla Fleet API. This card provides a professional interface to monitor and control your Tesla directly from your dashboard.
 
-<img width="862" height="963" alt="Screenshot 2026-02-23 195118" src="https://github.com/user-attachments/assets/cb5f79d3-4f6a-4401-9d63-1ab9944ad6df" />
+<img width="862" height="963" alt="Tesla Card Preview" src="card.png" />
 
 
 ## Features
