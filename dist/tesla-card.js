@@ -4,7 +4,7 @@ import {
   css,
 } from "https://unpkg.com/lit-element@2.4.0/lit-element.js?module";
 
-class TeslaCarCard extends LitElement {
+class TeslaCard extends LitElement {
   static get properties() {
     return {
       hass: {},
@@ -36,11 +36,11 @@ class TeslaCarCard extends LitElement {
     const chargeLimit = state(`number.${p}_charge_limit`)?.state || 80;
     const chargeAmps = state(`number.${p}_charge_current`)?.state || 16;
 
-    let carImage = `/local/community/tesla-car-card/images/tesla_off.png`;
+    let carImage = `/hacsfiles/tesla-card/images/tesla_off.png`;
     if (isClimateOn) {
-      carImage = inTemp < 19 ? `/local/community/tesla-car-card/images/tesla_preheat.png` : `/local/community/tesla-car-card/images/tesla_cool.png`;
+      carImage = inTemp < 19 ? `/hacsfiles/tesla-card/images/tesla_preheat.png` : `/hacsfiles/tesla-card/images/tesla_cool.png`;
     } else if (isCharging) {
-      carImage = `/local/community/tesla-car-card/images/tesla_charging.png`;
+      carImage = `/hacsfiles/tesla-card/images/tesla_charging.png`;
     }
 
     return html`
@@ -182,11 +182,11 @@ class TeslaCarCard extends LitElement {
   }
 }
 
-customElements.define("tesla-car-card", TeslaCarCard);
+customElements.define("tesla-card", TeslaCard);
 
 window.customCards = window.customCards || [];
 window.customCards.push({
-  type: "tesla-car-card",
-  name: "Tesla Car Card",
+  type: "tesla-card",
+  name: "Tesla Card",
   description: "v020 - Integrated Sliders & Privacy Prefix",
 });
