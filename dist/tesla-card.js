@@ -4,9 +4,6 @@ import {
   css,
 } from "https://unpkg.com/lit-element@2.4.0/lit-element.js?module";
 
-// ====================================================================
-// 1. MAIN CARD CLASS
-// ====================================================================
 class TeslaCard extends LitElement {
   static get properties() {
     return {
@@ -16,10 +13,6 @@ class TeslaCard extends LitElement {
     };
   }
 
-  static getConfigElement() {
-    return document.createElement("tesla-card-editor");
-  }
-
   constructor() {
     super();
     this._showSettings = false;
@@ -27,7 +20,7 @@ class TeslaCard extends LitElement {
 
   render() {
     const p = this.config.prefix;
-    if (!this.hass || !p || !this.hass.states[`sensor.${p}_battery_level`]) {
+    if (!this.hass || !this.hass.states[`sensor.${p}_battery_level` ]) {
       return html`<ha-card style="padding: 16px;">Connecting...</ha-card>`;
     }
 
@@ -74,6 +67,7 @@ class TeslaCard extends LitElement {
           </div>
 
           ${this._showSettings ? this.renderSettings(p, chargeLimit, chargeAmps) : this.renderActions(p, isCharging, isUnlocked, isClimateOn, inTemp)}
+          
         </div>
       </ha-card>
     `;
@@ -83,8 +77,9 @@ class TeslaCard extends LitElement {
     return html`
       <div class="actions">
         <button class="btn ${isClimateOn ? (inTemp < 19 ? 'heat-active' : 'cool-active') : ''}" 
-                @click="${() => this._act('climate', 'set_hvac_mode', { entity_id: `climate.${p}_climate`, hvac_mode: isClimateOn ? 'off' : 'heat_cool' })}">
-          <ha-icon icon="mdi:fan"></ha-icon> <span>${isClimateOn ? (inTemp < 19 ? 'Heat' : 'Cool') : 'AC'}</span>
+                @click="${() => this._toggleClimate(p, isClimateOn)}">
+          <ha-icon icon="mdi:fan"></ha-icon> 
+          <span>${isClimateOn ? (inTemp < 19 ? 'Heat' : 'Cool') : 'AC'}</span>
         </button>
 
         <button class="btn ${isCharging ? 'charging-flow' : ''}" 
@@ -92,12 +87,14 @@ class TeslaCard extends LitElement {
                 @touchstart="${this._handleStart}"
                 @mouseup="${() => this._handleEnd(p, isCharging)}"
                 @touchend="${() => this._handleEnd(p, isCharging)}">
-          <ha-icon icon="${isCharging ? 'mdi:battery-charging-60' : 'mdi:ev-station'}"></ha-icon> <span>${isCharging ? 'Stop' : 'Charge'}</span>
+          <ha-icon icon="${isCharging ? 'mdi:battery-charging-60' : 'mdi:ev-station'}"></ha-icon> 
+          <span>${isCharging ? 'Stop' : 'Charge'}</span>
         </button>
         
         <button class="btn ${isUnlocked ? 'unlocked-warn' : ''}" 
-                @click="${() => this._act('lock', isUnlocked ? 'lock' : 'unlock', { entity_id: `lock.${p}_lock` })}">
-          <ha-icon icon="${isUnlocked ? 'mdi:lock-open' : 'mdi:lock'}"></ha-icon> <span>${isUnlocked ? 'Open' : 'Locked'}</span>
+                @click="${() => this._toggleLock(p, isUnlocked)}">
+          <ha-icon icon="${isUnlocked ? 'mdi:lock-open' : 'mdi:lock'}"></ha-icon> 
+          <span>${isUnlocked ? 'Open' : 'Locked'}</span>
         </button>
       </div>
     `;
@@ -107,13 +104,8 @@ class TeslaCard extends LitElement {
     return html`
       <div class="settings-panel">
         <div class="settings-header">
-           <span>Controls</span>
+           <span>Charging Controls</span>
            <ha-icon icon="mdi:close" @click="${() => this._showSettings = false}" style="cursor:pointer"></ha-icon>
-        </div>
-        <div class="setting-row-icons">
-           <button class="mini-btn" @click="${() => this._act('button', 'press', {entity_id: `button.${p}_front_trunk`})}"><img src="/local/community/tesla-card/images/icons/frunk.png" width="24">Frunk</button>
-           <button class="mini-btn" @click="${() => this._act('button', 'press', {entity_id: `button.${p}_rear_trunk`})}"><img src="/local/community/tesla-card/images/icons/trunk.png" width="24">Trunk</button>
-           <button class="mini-btn" @click="${() => this._act('cover', 'open_cover', {entity_id: `cover.${p}_windows`})}"><img src="/local/community/tesla-card/images/icons/vent.png" width="24">Vent</button>
         </div>
         <div class="setting-row">
           <div class="row-label">Limit: ${limit}%</div>
@@ -144,11 +136,26 @@ class TeslaCard extends LitElement {
     }
   }
 
+  _toggleClimate(prefix, isOn) {
+    this._act('climate', 'set_hvac_mode', { entity_id: `climate.${prefix}_climate`, hvac_mode: isOn ? 'off' : 'heat_cool' });
+  }
+
+  _toggleLock(prefix, isCurrentlyUnlocked) {
+    this._act('lock', isCurrentlyUnlocked ? 'lock' : 'unlock', { entity_id: `lock.${prefix}_lock` });
+  }
+
   _act(domain, service, data) { this.hass.callService(domain, service, data); }
+
   setConfig(config) { this.config = config; }
 
   static get styles() {
     return css`
+      ha-card {
+        background: transparent !important;
+        background-color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+      }
       .container { padding: 20px; display: flex; flex-direction: column; align-items: center; color: white; background: #1a1a1a; border-radius: 15px; font-family: sans-serif; }
       .battery-main { font-size: 4rem; font-weight: 900; line-height: 1; }
       .range-sub { color: #888; font-size: 0.9rem; margin-top: 5px;}
@@ -159,44 +166,29 @@ class TeslaCard extends LitElement {
       .value { font-size: 1.1rem; font-weight: bold; }
       .actions { width: 100%; display: flex; gap: 8px; }
       .btn { flex: 1; padding: 12px 5px; border-radius: 10px; border: none; background: #333; color: white; font-weight: bold; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; cursor: pointer; transition: 0.3s; font-size: 0.8rem; overflow: hidden; position: relative; }
+      
       .charging-flow { background: #1db954 !important; }
-      .charging-flow::after { content: ""; position: absolute; top: 0; left: -100%; width: 200%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); animation: flow 1.5s infinite linear; }
+      .charging-flow::after {
+        content: ""; position: absolute; top: 0; left: -100%; width: 200%; height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        animation: flow 1.5s infinite linear;
+      }
       @keyframes flow { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+
       .heat-active { background: #e67e22 !important; }
       .cool-active { background: #3498db !important; }
       .unlocked-warn { background: #cc0000 !important; }
+
       .settings-panel { background: #222; padding: 15px; border-radius: 10px; text-align: left; width: 100%; box-sizing: border-box; }
       .settings-header { display: flex; justify-content: space-between; margin-bottom: 15px; font-weight: bold; border-bottom: 1px solid #444; padding-bottom: 5px; }
       .setting-row { margin-bottom: 15px; }
-      .setting-row-icons { display: flex; justify-content: space-between; margin-bottom: 15px; }
       .row-label { font-size: 0.9rem; color: #ccc; }
-      .mini-btn { background: #333; border: none; border-radius: 8px; color: white; padding: 8px; display: flex; flex-direction: column; align-items: center; cursor: pointer; }
       input[type=range] { width: 100%; margin-top: 10px; accent-color: #1db954; cursor: pointer; }
     `;
   }
 }
-customElements.define("tesla-card", TeslaCard);
 
-// ====================================================================
-// 2. EDITOR CLASS
-// ====================================================================
-class TeslaCardEditor extends LitElement {
-  static get properties() { return { hass: {}, _config: {} }; }
-  setConfig(config) { this._config = config; }
-  render() {
-    if (!this.hass) return html``;
-    return html`
-      <ha-selector .hass=${this.hass} .selector=${{device: {}}} .value=${this._config.device_id || ""} label="Select Tesla" @value-changed=${this._deviceChanged}></ha-selector>
-    `;
-  }
-  _deviceChanged(ev) {
-    const deviceId = ev.detail.value;
-    const entity = Object.values(this.hass.entities).find(e => e.device_id === deviceId);
-    const prefix = entity ? entity.entity_id.split(".")[1].replace(/_(battery_level|status|climate|lock|charging)$/, "") : "";
-    this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: { ...this._config, device_id: deviceId, prefix } } }));
-  }
-}
-customElements.define("tesla-card-editor", TeslaCardEditor);
+customElements.define("tesla-card", TeslaCard);
 
 window.customCards = window.customCards || [];
 window.customCards.push({
