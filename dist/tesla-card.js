@@ -1,4 +1,6 @@
-import { LitElement, html, css } from "https://unpkg.com/lit-element@2.4.0/lit-element.js?module";
+const LitElement = window.LitElement || Object.getPrototypeOf(customElements.get("ha-panel-lovelace") || class extends HTMLElement {});
+const html = window.html || LitElement.prototype.html;
+const css = window.css || LitElement.prototype.css;
 
 console.info(
   `%c TESLA-CARD `,
