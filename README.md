@@ -15,21 +15,20 @@ A sleek, custom card designed for the Tesla Fleet API. This card provides a prof
 
 ## Installation
 
-### 1. File Placement
-Place the files in your Home Assistant www folder (the /local/ path).
+### Installation via HACS (Recommended)
+1. Add this repository to HACS as a **Lovelace** custom repository.
+2. Click **Install**.
+3. HACS will automatically manage and register `/hacsfiles/tesla-card/tesla-card.js` as a dashboard resource.
 
-* Path: /config/www/community/tesla-car-card/
-  * Place tesla-car-card.js in this folder.
-  * Create a folder named "images" inside this folder.
-  * Place your images inside that folder: /local/community/tesla-car-card/images/
-
-### 2. Add Resource
-Add the card reference to your Home Assistant Dashboard:
-1. Go to Settings > Dashboards.
-2. Click the three dots (top right) and select Resources.
-3. Click Add Resource.
-4. URL: /local/community/tesla-car-card/tesla-car-card.js
-5. Resource Type: JavaScript Module
+### Manual Installation
+1. Download `tesla-card.js` along with the `images/` directory from the release.
+2. Place the extracted files inside your Home Assistant configuration directory under `/config/www/community/tesla-card/`:
+   * `/config/www/community/tesla-card/tesla-card.js`
+   * `/config/www/community/tesla-card/images/`
+3. In Home Assistant, navigate to **Settings > Dashboards > 3 dots (top right) > Resources**.
+4. Add a new resource:
+   * **URL:** `/hacsfiles/tesla-card/tesla-card.js` (or `/local/community/tesla-card/tesla-card.js` if not using HACS)
+   * **Resource Type:** JavaScript Module
 
 ---
 
