@@ -1,6 +1,10 @@
+// Scope Lit directly from Home Assistant's global instance
 const LitElement = window.LitElement || Object.getPrototypeOf(customElements.get("ha-panel-lovelace") || class extends HTMLElement {});
 const html = window.html || LitElement.prototype.html;
 const css = window.css || LitElement.prototype.css;
+
+// Dynamically derive the base path from where this JS module is loaded
+const CARD_BASE_PATH = new URL('.', import.meta.url).pathname;
 
 console.info(
   `%c TESLA-CARD `,
@@ -39,7 +43,7 @@ class TeslaCard extends LitElement {
   }
 
   render() {
-    const basePath = "/local/community/tesla-card/";
+    const basePath = CARD_BASE_PATH;
     const p = this.config.prefix;
     
     if (!this.hass || !p || !this.hass.states[`sensor.${p}_battery_level`]) {
@@ -75,7 +79,7 @@ class TeslaCard extends LitElement {
           </div>
 
           <div class="car-wrapper">
-             <img class="car-img" src="${carImage}" />
+             <img class="car-img" src="${carImage}" alt="Tesla Status" />
           </div>
 
           <div class="dynamic-area">
@@ -137,10 +141,10 @@ class TeslaCard extends LitElement {
         const isWinClosed = winState === 'closed';
         return html`
           <div class="settings-grid">
-            <button class="mini-btn" @click="${() => this._act('button', 'press', {entity_id: `button.${p}_front_trunk`})}"><img src="${basePath}images/icons/frunk.png" style="width:24px;height:24px;">Frunk</button>
-            <button class="mini-btn" @click="${() => this._act('button', 'press', {entity_id: `button.${p}_rear_trunk`})}"><img src="${basePath}images/icons/trunk.png" style="width:24px;height:24px;">Trunk</button>
+            <button class="mini-btn" @click="${() => this._act('button', 'press', {entity_id: `button.${p}_front_trunk`})}"><img src="${basePath}images/icons/frunk.png" style="width:24px;height:24px;" alt="Frunk">Frunk</button>
+            <button class="mini-btn" @click="${() => this._act('button', 'press', {entity_id: `button.${p}_rear_trunk`})}"><img src="${basePath}images/icons/trunk.png" style="width:24px;height:24px;" alt="Trunk">Trunk</button>
             <button class="mini-btn" @click="${() => this._act('cover', isWinClosed ? 'open_cover' : 'close_cover', {entity_id: `cover.${p}_windows`})}">
-                <img src="${basePath}images/icons/vent.png" style="width:24px;height:24px;">${isWinClosed ? 'Vent' : 'Close'}
+                <img src="${basePath}images/icons/vent.png" style="width:24px;height:24px;" alt="Vent">${isWinClosed ? 'Vent' : 'Close'}
             </button>
             <ha-icon class="close-btn" icon="mdi:close-circle" @click="${() => this._resetMode()}"></ha-icon>
           </div>`;
@@ -211,9 +215,13 @@ class TeslaCard extends LitElement {
 }
 customElements.define("tesla-card", TeslaCard);
 
+// ====================================================================
+// EDITOR CLASS
+// ====================================================================
 class TeslaCardEditor extends LitElement {
   static get properties() { return { hass: {}, _config: {} }; }
   setConfig(config) { this._config = config; }
+  
   render() {
     if (!this.hass || !this._config) return html``;
     const deviceSelector = { device: {} };
@@ -230,6 +238,7 @@ class TeslaCardEditor extends LitElement {
       </div>
     `;
   }
+
   _deviceChanged(ev) {
     if (!this._config) return;
     const selectedDeviceId = ev.detail.value;
@@ -247,6 +256,7 @@ class TeslaCardEditor extends LitElement {
     const newConfig = { ...this._config, device_id: selectedDeviceId, prefix: computedPrefix };
     this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: newConfig }, bubbles: true, composed: true }));
   }
+
   static get styles() {
     return css`
       .card-config { display: flex; flex-direction: column; gap: 14px; padding: 8px 0; font-family: sans-serif; }
