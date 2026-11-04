@@ -47,5 +47,6 @@ The prefix is the unique identifier Home Assistant uses for your vehicle entitie
 Add a Custom Manual Card to your dashboard and enter the following YAML:
 
 ```yaml
-type: custom:tesla-car-card
+type: custom:tesla-card
 prefix: [YOUR_PREFIX_HERE]
+```
