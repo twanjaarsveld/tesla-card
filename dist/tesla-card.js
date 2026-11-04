@@ -243,16 +243,22 @@ class TeslaCardEditor extends LitElement {
     if (!this._config) return;
     const selectedDeviceId = ev.detail.value;
     let computedPrefix = "";
+
     if (selectedDeviceId && this.hass.entities) {
+      // Find the entity targeting battery level specifically, falling back to any entity if needed
       const matchingEntityId = Object.keys(this.hass.entities).find(
+        (id) => this.hass.entities[id].device_id === selectedDeviceId && id.endsWith("_battery_level")
+      ) || Object.keys(this.hass.entities).find(
         (id) => this.hass.entities[id].device_id === selectedDeviceId
       );
+
       if (matchingEntityId) {
         const entityIdWithoutDomain = matchingEntityId.split(".")[1];
-        const suffixes = /(?:_battery_level|_battery_range|_inside_temperature|_outside_temperature|_lock|_climate|_charging|_charge_limit|_charge_current|_odometer|_windows|_front_trunk|_rear_trunk|_status)$/;
-        computedPrefix = entityIdWithoutDomain.replace(suffixes, "");
+        // Strip _battery_level or any fallback suffix
+        computedPrefix = entityIdWithoutDomain.replace(/_battery_level$/, "").replace(/(?:_battery_range|_inside_temperature|_outside_temperature|_lock|_climate|_charging|_charge_limit|_charge_current|_odometer|_windows|_front_trunk|_rear_trunk|_status)$/, "");
       }
     }
+
     const newConfig = { ...this._config, device_id: selectedDeviceId, prefix: computedPrefix };
     this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: newConfig }, bubbles: true, composed: true }));
   }
