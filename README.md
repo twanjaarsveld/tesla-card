@@ -32,6 +32,10 @@ A sleek, custom card designed for the Tesla Fleet API. This card provides a prof
 
 ---
 
+### Dashboard Setup (UI Editor)
+1. Pick the `custom:tesla-card` in the card picker.
+2. Select your Tesla directly from the **Device** dropdown list (entering a manual prefix is no longer required).
+
 ## Privacy and Prefix Configuration
 To protect your privacy and keep sensitive data like license plates or VINs out of your configuration, this card uses a prefix system.
 
@@ -43,7 +47,7 @@ The prefix is the unique identifier Home Assistant uses for your vehicle entitie
 4. The prefix is the text between "sensor." and the next underscore.
    * Example: If your entity is sensor.abc_123_battery_level, your prefix is: abc_123
 
-### Dashboard Setup
+### Manual Dashboard Setup
 Add a Custom Manual Card to your dashboard and enter the following YAML:
 
 ```yaml
