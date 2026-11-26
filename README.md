@@ -15,10 +15,10 @@ A sleek, custom card designed for the Tesla Fleet API. This card provides a prof
 
 ## Installation
 
-### Installation via HACS (Recommended)
-1. Add this repository to HACS as a **Lovelace** custom repository.
+### Installation via Marketplace (Recommended) 
+1. Search for "Tesla Card".
 2. Click **Install**.
-3. HACS will automatically manage and register `/hacsfiles/tesla-card/tesla-card.js` as a dashboard resource.
+
 
 ### Manual Installation
 1. Download `tesla-card.js` along with the `images/` directory from the release.
