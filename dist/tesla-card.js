@@ -279,4 +279,5 @@ window.customCards.push({
   type: "tesla-card",
   name: "Tesla Card",
   description: "A clean card to control and view status of your Tesla",
+  preview: true,
 });
